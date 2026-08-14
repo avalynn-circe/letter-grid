@@ -35,15 +35,17 @@ export const lightTheme: Theme = {
   threadShadow: "rgba(22,35,63,0.22)",
 };
 
+// Dark accents are deliberately pale and desaturated — saturated mid-blues
+// read as glaring on OLED dark backgrounds.
 export const darkTheme: Theme = {
   bg: "#0A1120",
   surface: "#123456",
   tileBg: "#1B4870",
   ink: "#EDF1FA",
   inkSoft: "#9FB3D6",
-  accent: "#6C90E0",
-  accentDeep: "#8FADEC",
-  accentBright: "#7FA0E8",
+  accent: "#A9BAD8",
+  accentDeep: "#C4CFE5",
+  accentBright: "#9FB2D2",
   accentSoft: "#24447A",
   onAccent: "#0A1120",
   alert: "#E98CA0",

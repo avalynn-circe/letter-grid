@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAudioPlayer } from "expo-audio";
+import Svg, { Path, Circle, Line } from "react-native-svg";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useFonts as useBaloo, Baloo2_600SemiBold } from "@expo-google-fonts/baloo-2";
 import {
@@ -69,8 +70,12 @@ function AppInner() {
   const [invalidFlash, setInvalidFlash] = useState<number[]>([]);
   const [found, setFound] = useState<Map<string, number>>(new Map());
   // Single readout line, exactly like the web build: shows the capitalized
-  // in-progress word, or a full feedback sentence after a submit.
-  const [wordDisplay, setWordDisplay] = useState<string>("");
+  // in-progress word, or a full feedback sentence after a submit. Feedback
+  // sentences render in the soft ink color; the in-progress word in full ink.
+  const [readout, setReadout] = useState<{ text: string; muted: boolean }>({
+    text: "",
+    muted: false,
+  });
 
   const [history, setHistory] = useState<GameRecord[]>([]);
   const [statsVisible, setStatsVisible] = useState(false);
@@ -117,7 +122,7 @@ function AppInner() {
   // ---------- selection / word building ----------
   function handleSelectionChange(path: number[]) {
     setSelectedPath(path);
-    setWordDisplay(capitalize(wordFromPath(board, path)));
+    setReadout({ text: capitalize(wordFromPath(board, path)), muted: false });
   }
 
   function handleInvalidTap(index: number) {
@@ -125,9 +130,9 @@ function AppInner() {
     setTimeout(() => setInvalidFlash([]), 320);
   }
 
-  function clearSelection(keepWord?: string) {
+  function clearSelection(displayText?: string) {
     setSelectedPath([]);
-    setWordDisplay(keepWord ?? "");
+    setReadout({ text: displayText ?? "", muted: displayText !== undefined });
   }
 
   function submitWord() {
@@ -135,7 +140,7 @@ function AppInner() {
     const w = wordFromPath(board, selectedPath);
     const Word = capitalize(w);
     if (w.length < 3) {
-      setWordDisplay("Words need at least 3 letters.");
+      setReadout({ text: "Words need at least 3 letters.", muted: true });
       return;
     }
     if (found.has(w)) {
@@ -226,8 +231,17 @@ function AppInner() {
         <View style={styles.headerTop}>
           <Text style={styles.title}>Spelling Grid</Text>
           <View style={styles.iconRow}>
-            <Pressable onPress={() => setStatsVisible(true)} style={styles.iconBtn}>
-              <Text style={styles.iconBtnText}>📊</Text>
+            <Pressable
+              onPress={() => setStatsVisible(true)}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="View stats"
+            >
+              <View style={styles.statsIcon}>
+                <View style={[styles.statsBar, { height: 7, backgroundColor: theme.accent }]} />
+                <View style={[styles.statsBar, { height: 13, backgroundColor: theme.accent }]} />
+                <View style={[styles.statsBar, { height: 10, backgroundColor: theme.accent }]} />
+              </View>
             </Pressable>
             <Pressable
               onPress={toggleSound}
@@ -235,11 +249,29 @@ function AppInner() {
               accessibilityRole="button"
               accessibilityLabel="Toggle ambient sound"
             >
-              <Text style={[styles.iconBtnText, { color: theme.accent, fontSize: 16 }]}>♪</Text>
-              {!soundOn && <View style={[styles.muteSlash, { backgroundColor: theme.accent }]} />}
+              {/* Same beamed two-note icon as the web build, slash when muted */}
+              <Svg
+                viewBox="0 0 24 24"
+                width={18}
+                height={18}
+                fill="none"
+                stroke={theme.accent}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <Path d="M9 18V5l12-2v13" />
+                <Circle cx={6} cy={18} r={3} />
+                <Circle cx={18} cy={16} r={3} />
+                {!soundOn && <Line x1={3} y1={3} x2={21} y2={21} />}
+              </Svg>
             </Pressable>
             <Pressable onPress={toggleTheme} style={styles.iconBtn}>
-              <Text style={[styles.iconBtnText, { color: theme.accent }]}>{themeName === "dark" ? "☀" : "◐"}</Text>
+              {/* ︎ forces the monochrome text glyph — Android otherwise
+                  swaps in the bright yellow sun emoji and ignores our color */}
+              <Text style={[styles.iconBtnText, { color: theme.accent }]}>
+                {themeName === "dark" ? "☀︎" : "◐"}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -264,7 +296,9 @@ function AppInner() {
         />
 
         <View style={styles.readout}>
-          <Text style={styles.readoutWord}>{wordDisplay}</Text>
+          <Text style={[styles.readoutWord, readout.muted && { color: theme.inkSoft }]}>
+            {readout.text}
+          </Text>
         </View>
 
         <View style={styles.controls}>
@@ -355,6 +389,8 @@ function makeStyles(theme: Theme) {
       marginLeft: 8,
     },
     iconBtnText: { fontSize: 15 },
+    statsIcon: { flexDirection: "row", alignItems: "flex-end", columnGap: 2 },
+    statsBar: { width: 3, borderRadius: 1 },
     tagline: { fontFamily: "LibreFranklin_400Regular", fontSize: 12.5, color: theme.inkSoft, marginTop: 6, marginBottom: 14 },
     primaryBtn: { backgroundColor: theme.accent, borderRadius: 9, paddingVertical: 13, alignItems: "center" },
     primaryBtnText: { fontFamily: "LibreFranklin_600SemiBold", color: theme.surface, fontSize: 14.5 },
@@ -391,12 +427,6 @@ function makeStyles(theme: Theme) {
       marginTop: 14,
     },
     sessionStrong: { fontFamily: "JetBrainsMono_600SemiBold", color: theme.accentDeep, fontSize: 14 },
-    muteSlash: {
-      position: "absolute",
-      width: 26,
-      height: 1.5,
-      transform: [{ rotate: "45deg" }],
-    },
     confirmOverlay: { flex: 1, alignItems: "center", justifyContent: "center" },
     confirmBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(0,0,0,0.4)" },
     confirmDialog: {

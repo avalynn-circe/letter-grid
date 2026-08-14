@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, LayoutChangeEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import Tile from "./Tile";
@@ -14,18 +14,11 @@ interface BoardProps {
   onInvalidTap: (index: number) => void;
 }
 
-interface TilePos {
-  x: number;
-  y: number;
-  size: number;
-}
-
 const GAP = 7;
 const PADDING = 12;
 
 export default function Board({ board, selectedPath, invalidFlash, theme, onSelectionChange, onInvalidTap }: BoardProps) {
   const [containerWidth, setContainerWidth] = useState(0);
-  const positions = useRef<TilePos[]>([]);
 
   const tileSize = containerWidth > 0 ? (containerWidth - PADDING * 2 - GAP * (SIZE - 1)) / SIZE : 0;
 
@@ -34,10 +27,6 @@ export default function Board({ board, selectedPath, invalidFlash, theme, onSele
     // Cap at a sane max so this doesn't sprawl on a tablet-width screen.
     setContainerWidth(Math.min(w, 480));
   }
-
-  const handleTileLayout = useCallback((index: number, x: number, y: number, size: number) => {
-    positions.current[index] = { x, y, size };
-  }, []);
 
   function handlePress(index: number) {
     let next = selectedPath.slice();
@@ -70,12 +59,15 @@ export default function Board({ board, selectedPath, invalidFlash, theme, onSele
     return "selected";
   }
 
+  // Tile centers are derived from the grid geometry directly — layout
+  // callbacks report coordinates relative to each tile's wrapper, which is
+  // useless for drawing across the whole grid.
   function threadPath(): string {
-    if (selectedPath.length < 2) return "";
+    if (selectedPath.length < 2 || tileSize <= 0) return "";
     const pts = selectedPath.map((i) => {
-      const p = positions.current[i];
-      if (!p) return [0, 0];
-      return [p.x + p.size / 2, p.y + p.size / 2];
+      const r = Math.floor(i / SIZE);
+      const c = i % SIZE;
+      return [c * (tileSize + GAP) + tileSize / 2, r * (tileSize + GAP) + tileSize / 2];
     });
     return pts.reduce(
       (acc, p, idx) => acc + (idx === 0 ? `M ${p[0]} ${p[1]}` : ` L ${p[0]} ${p[1]}`),
@@ -105,7 +97,6 @@ export default function Board({ board, selectedPath, invalidFlash, theme, onSele
                   state={tileState(i)}
                   theme={theme}
                   onPress={handlePress}
-                  onLayout={handleTileLayout}
                 />
               </View>
             ))}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Pressable, Text, View, StyleSheet, LayoutChangeEvent, Animated } from "react-native";
+import { Pressable, Text, View, StyleSheet, Animated } from "react-native";
 import { Theme } from "../theme/theme";
 
 interface TileProps {
@@ -9,10 +9,9 @@ interface TileProps {
   theme: Theme;
   size: number;
   onPress: (index: number) => void;
-  onLayout: (index: number, x: number, y: number, size: number) => void;
 }
 
-export default function Tile({ letter, index, state, theme, size, onPress, onLayout }: TileProps) {
+export default function Tile({ letter, index, state, theme, size, onPress }: TileProps) {
   const isQu = letter === "Qu";
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -34,16 +33,10 @@ export default function Tile({ letter, index, state, theme, size, onPress, onLay
   // to the bright accent. The border itself never changes.
   const underEdge = state === "selected" || state === "active" ? theme.accentBright : theme.rule;
 
-  function handleLayout(e: LayoutChangeEvent) {
-    const { x, y, width } = e.nativeEvent.layout;
-    onLayout(index, x, y, width);
-  }
-
   return (
     <Animated.View style={{ transform: [{ translateX: shake }] }}>
       <Pressable
         onPress={() => onPress(index)}
-        onLayout={handleLayout}
         style={[
           styles.tile,
           {
