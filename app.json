@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Spelling Grid",
+    "slug": "spelling-grid",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#EAF6F5",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#EAF6F5"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.avalynncirce.spellinggrid"
+    },
+    "android": {
+      "package": "com.avalynncirce.spellinggrid",
+      "adaptiveIcon": {
+        "backgroundColor": "#EAF6F5"
+      }
+    }
+  }
+}
