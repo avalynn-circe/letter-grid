@@ -61,6 +61,10 @@ export function wordFromPath(board: string[], path: number[]): string {
   return path.map((i) => board[i]).join("").toLowerCase();
 }
 
+export function capitalize(w: string): string {
+  return w ? w[0].toUpperCase() + w.slice(1) : w;
+}
+
 export function scoreForLength(n: number): number {
   if (n <= 4) return 1;
   if (n === 5) return 2;

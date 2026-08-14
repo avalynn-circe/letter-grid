@@ -17,40 +17,39 @@ export interface Theme {
   threadShadow: string;
 }
 
+// Ported 1:1 from the current web build's CSS custom properties (blue palette).
 export const lightTheme: Theme = {
-  bg: "#EAF6F5",
+  bg: "#EEF3FC",
   surface: "#FFFFFF",
   tileBg: "#FFFFFF",
-  ink: "#123B39",
-  inkSoft: "#5C8B87",
-  accent: "#1C7C74",
-  accentDeep: "#0F5750",
-  accentBright: "#2FBFB0",
-  accentSoft: "#B7EAE3",
-  onAccent: "#0B2624",
+  ink: "#16233F",
+  inkSoft: "#5A6E96",
+  accent: "#4568D6",
+  accentDeep: "#2C4AA0",
+  accentBright: "#5A82E0",
+  accentSoft: "#DCE6FB",
+  onAccent: "#101B33",
   alert: "#C24B63",
-  rule: "rgba(18,59,57,0.14)",
-  shadow: "rgba(18,59,57,0.16)",
-  threadShadow: "rgba(18,59,57,0.22)",
+  rule: "rgba(22,35,63,0.14)",
+  shadow: "rgba(22,35,63,0.16)",
+  threadShadow: "rgba(22,35,63,0.22)",
 };
 
-// Deliberately desaturated/dusty rather than vivid — a neon teal against
-// a near-black background reads as glaring, not "dark mode".
 export const darkTheme: Theme = {
-  bg: "#0B211F",
-  surface: "#12302E",
-  tileBg: "#163C38",
-  ink: "#E7F6F3",
-  inkSoft: "#8FC2BC",
-  accent: "#92D0C9",
-  accentDeep: "#A9E2DB",
-  accentBright: "#45857E",
-  accentSoft: "#234E49",
-  onAccent: "#06201E",
+  bg: "#0A1120",
+  surface: "#123456",
+  tileBg: "#1B4870",
+  ink: "#EDF1FA",
+  inkSoft: "#9FB3D6",
+  accent: "#6C90E0",
+  accentDeep: "#8FADEC",
+  accentBright: "#7FA0E8",
+  accentSoft: "#24447A",
+  onAccent: "#0A1120",
   alert: "#E98CA0",
-  rule: "rgba(231,246,243,0.14)",
-  shadow: "rgba(0,0,0,0.4)",
-  threadShadow: "rgba(0,0,0,0.4)",
+  rule: "rgba(237,241,250,0.14)",
+  shadow: "rgba(0,0,0,0.45)",
+  threadShadow: "rgba(0,0,0,0.45)",
 };
 
 export function getTheme(name: ThemeName): Theme {

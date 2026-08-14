@@ -5,10 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#EAF6F5",
+    "backgroundColor": "#EEF3FC",
     "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#EAF6F5"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#EEF3FC"
     },
     "ios": {
       "supportsTablet": false,
@@ -17,7 +19,8 @@
     "android": {
       "package": "com.avalynncirce.spellinggrid",
       "adaptiveIcon": {
-        "backgroundColor": "#EAF6F5"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4568D6"
       }
     }
   }

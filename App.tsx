@@ -6,13 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   useColorScheme,
-  ActivityIndicator,
   Modal,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAudioPlayer } from "expo-audio";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { useFonts as useFraunces, Fraunces_600SemiBold } from "@expo-google-fonts/fraunces";
+import { useFonts as useBaloo, Baloo2_600SemiBold } from "@expo-google-fonts/baloo-2";
 import {
   useFonts as useLibreFranklin,
   LibreFranklin_400Regular,
@@ -33,6 +32,7 @@ import { loadDictionary } from "./src/data/dictionary";
 import {
   generateBoard,
   wordFromPath,
+  capitalize,
   scoreForLength,
   sessionScore,
   longestWord,
@@ -48,14 +48,14 @@ import {
 } from "./src/storage/storage";
 
 function AppInner() {
-  const [frauncesLoaded] = useFraunces({ Fraunces_600SemiBold });
+  const [balooLoaded] = useBaloo({ Baloo2_600SemiBold });
   const [libreLoaded] = useLibreFranklin({
     LibreFranklin_400Regular,
     LibreFranklin_600SemiBold,
     LibreFranklin_700Bold,
   });
   const [monoLoaded] = useJetBrainsMono({ JetBrainsMono_400Regular, JetBrainsMono_600SemiBold });
-  const fontsReady = frauncesLoaded && libreLoaded && monoLoaded;
+  const fontsReady = balooLoaded && libreLoaded && monoLoaded;
 
   const systemScheme = useColorScheme();
   const [themeName, setThemeName] = useState<ThemeName>("light");
@@ -68,7 +68,8 @@ function AppInner() {
   const [selectedPath, setSelectedPath] = useState<number[]>([]);
   const [invalidFlash, setInvalidFlash] = useState<number[]>([]);
   const [found, setFound] = useState<Map<string, number>>(new Map());
-  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  // Single readout line, exactly like the web build: shows the capitalized
+  // in-progress word, or a full feedback sentence after a submit.
   const [wordDisplay, setWordDisplay] = useState<string>("");
 
   const [history, setHistory] = useState<GameRecord[]>([]);
@@ -116,8 +117,7 @@ function AppInner() {
   // ---------- selection / word building ----------
   function handleSelectionChange(path: number[]) {
     setSelectedPath(path);
-    setWordDisplay(wordFromPath(board, path));
-    setMessage(null);
+    setWordDisplay(capitalize(wordFromPath(board, path)));
   }
 
   function handleInvalidTap(index: number) {
@@ -133,28 +133,25 @@ function AppInner() {
   function submitWord() {
     if (!dictRef.current) return;
     const w = wordFromPath(board, selectedPath);
+    const Word = capitalize(w);
     if (w.length < 3) {
-      setMessage({ text: "Words need 3+ letters", ok: false });
+      setWordDisplay("Words need at least 3 letters.");
       return;
     }
     if (found.has(w)) {
-      setMessage({ text: "Already found", ok: false });
-      clearSelection(w);
+      clearSelection(`${Word} has already been found.`);
       return;
     }
     if (!dictRef.current.has(w)) {
-      setMessage({ text: "Not in the dictionary", ok: false });
       setInvalidFlash(selectedPath);
       setTimeout(() => setInvalidFlash([]), 320);
-      clearSelection(w);
+      clearSelection(`${Word} is not in the dictionary.`);
       return;
     }
-    const points = scoreForLength(w.length);
     const next = new Map(found);
-    next.set(w, points);
+    next.set(w, scoreForLength(w.length));
     setFound(next);
-    setMessage({ text: `+${points} pts`, ok: true });
-    clearSelection(w);
+    clearSelection(`${Word} has been found.`);
     saveCurrentPuzzle({ board, found: [...next.entries()] });
   }
 
@@ -212,13 +209,11 @@ function AppInner() {
   }
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const score = sessionScore(found);
   const canSubmit = selectedPath.length >= 3;
 
   if (!fontsReady || !ready) {
     return (
       <SafeAreaView style={[styles.loadingScreen]}>
-        <ActivityIndicator color={theme.accent} />
         <Text style={[styles.loadingText, { color: theme.accent }]}>Loading the dictionary…</Text>
       </SafeAreaView>
     );
@@ -249,7 +244,11 @@ function AppInner() {
           </View>
         </View>
         <Text style={styles.tagline}>
-          Untimed, solo, <Text style={{ color: theme.accent, fontWeight: "600" }}>at your own pace</Text>.
+          Untimed, solo,{" "}
+          <Text style={{ color: theme.accent, fontFamily: "LibreFranklin_600SemiBold" }}>
+            at your own pace
+          </Text>
+          .
         </Text>
         <Pressable onPress={requestNewPuzzle} style={styles.primaryBtn}>
           <Text style={styles.primaryBtnText}>New Puzzle</Text>
@@ -265,13 +264,7 @@ function AppInner() {
         />
 
         <View style={styles.readout}>
-          <Text style={styles.readoutWord}>{wordDisplay.toUpperCase()}</Text>
-          {message && (
-            <Text style={[styles.readoutMsg, { color: message.ok ? theme.accent : theme.alert }]}>
-              {" "}
-              — {message.text}
-            </Text>
-          )}
+          <Text style={styles.readoutWord}>{wordDisplay}</Text>
         </View>
 
         <View style={styles.controls}>
@@ -288,8 +281,7 @@ function AppInner() {
         </View>
 
         <Text style={styles.sessionLine}>
-          This game: <Text style={styles.sessionStrong}>{score}</Text> pts ·{" "}
-          <Text style={styles.sessionStrong}>{found.size}</Text> words
+          This game: <Text style={styles.sessionStrong}>{found.size}</Text> words found
         </Text>
 
         <FoundWords found={found} theme={theme} onRemove={removeFoundWord} />
@@ -347,10 +339,10 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.bg },
     loadingScreen: { flex: 1, backgroundColor: theme.bg, alignItems: "center", justifyContent: "center" },
-    loadingText: { marginTop: 12, fontFamily: "Fraunces_600SemiBold", fontSize: 16 },
+    loadingText: { marginTop: 12, fontFamily: "Baloo2_600SemiBold", fontSize: 16 },
     scrollContent: { padding: 18, paddingBottom: 48 },
     headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    title: { fontFamily: "Fraunces_600SemiBold", fontSize: 24, color: theme.accentDeep },
+    title: { fontFamily: "Baloo2_600SemiBold", fontSize: 24, color: theme.accentDeep },
     iconRow: { flexDirection: "row" },
     iconBtn: {
       width: 38,
@@ -370,12 +362,15 @@ function makeStyles(theme: Theme) {
       marginTop: 16,
       minHeight: 28,
       alignItems: "center",
-      flexDirection: "row",
       justifyContent: "center",
-      flexWrap: "wrap",
     },
-    readoutWord: { fontFamily: "Fraunces_600SemiBold", fontSize: 20, color: theme.accentDeep, letterSpacing: 1 },
-    readoutMsg: { fontFamily: "LibreFranklin_600SemiBold", fontSize: 12.5 },
+    readoutWord: {
+      fontFamily: "Baloo2_600SemiBold",
+      fontSize: 19,
+      color: theme.ink,
+      letterSpacing: 0.4,
+      textAlign: "center",
+    },
     controls: { flexDirection: "row", marginTop: 10 },
     ghostBtn: {
       flex: 1,

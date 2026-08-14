@@ -16,8 +16,8 @@ over, but every screen is real `View`/`Text`/`Pressable` components.
 - `assets/` — the dictionary JSON and the ambient audio track
   (`ambient.mp3`, played via `expo-audio`: looping, off by default,
   volume 0.35 — same behavior as the web version)
-- `src/theme/` — light/dark color tokens, same desaturated dark palette
-  from the last round of fixes
+- `src/theme/` — light/dark color tokens, synced to the current web
+  build's blue palette
 - `src/storage/` — persistence via `AsyncStorage` — the real on-device
   storage for React Native, not a browser API. Puzzles and stats survive
   indefinitely, same as promised before.
@@ -56,9 +56,6 @@ and submit it, same as any iOS app.
 - Tile taps use the same tap-sequence selection as before (tap a tile,
   then an adjacent one, and so on) rather than a drag gesture — matches
   what was already decided earlier in this project.
-- The invalid-tap flash is a color change (border turns to the alert
-  color briefly), not a shake animation — straightforward to upgrade
-  later with `Animated` if you want the shake back.
 - The web version's keyboard bindings (arrows/Space/Backspace/Enter)
   don't apply here — this is a touch UI.
 

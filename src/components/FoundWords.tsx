@@ -26,9 +26,7 @@ export default function FoundWords({ found, theme, onRemove }: FoundWordsProps) 
             </Text>
             <Text style={[styles.groupCount, { color: theme.accent }]}>{words.length}</Text>
           </View>
-          {words.length === 0 ? (
-            <Text style={[styles.empty, { color: theme.inkSoft }]}>None yet</Text>
-          ) : (
+          {words.length > 0 && (
             <View style={styles.chipRow}>
               {words.map((w) => (
                 <Pressable
@@ -56,15 +54,14 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
+    fontFamily: "LibreFranklin_700Bold",
+    letterSpacing: 1.1,
     marginBottom: 12,
   },
   group: { marginBottom: 14 },
   groupHead: { flexDirection: "row", justifyContent: "space-between", marginBottom: 7 },
-  groupLabel: { fontSize: 10.5, fontWeight: "700", letterSpacing: 0.5 },
-  groupCount: { fontSize: 10.5, fontWeight: "700" },
-  empty: { fontSize: 12, fontStyle: "italic" },
+  groupLabel: { fontSize: 10.5, fontFamily: "LibreFranklin_700Bold", letterSpacing: 0.75 },
+  groupCount: { fontSize: 10.5, fontFamily: "LibreFranklin_700Bold", letterSpacing: 0.75 },
   chipRow: { flexDirection: "row", flexWrap: "wrap" },
   chip: {
     borderWidth: 1,

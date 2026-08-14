@@ -40,7 +40,7 @@ export default function StatsSheet({ visible, onClose, history, theme, onReset }
 
         <Row label="Best score" value={best ?? "—"} theme={theme} />
         <Row label="Games played" value={history.length} theme={theme} />
-        <Row label="Average score" value={avg ?? "—"} theme={theme} last />
+        <Row label="Average score" value={avg ?? "—"} theme={theme} />
         <Row label="Longest word" value={longest || "—"} theme={theme} last />
 
         <View style={styles.sparkline}>
@@ -83,7 +83,7 @@ export default function StatsSheet({ visible, onClose, history, theme, onReset }
         )}
 
         <Text style={[styles.footer, { color: theme.inkSoft, borderTopColor: theme.rule }]}>
-          Nobody's Business — <Text style={{ fontWeight: "600" }}>never ads. always private.</Text>
+          Nobody's Business — <Text style={{ fontFamily: "LibreFranklin_700Bold" }}>never ads. always private.</Text>
         </Text>
         <Text style={[styles.credit, { color: theme.inkSoft }]}>
           Music: "Lofi Chill Beat (Window Rain Vibes)" by{" "}
@@ -107,7 +107,7 @@ export default function StatsSheet({ visible, onClose, history, theme, onReset }
 function Row({ label, value, theme, last }: { label: string; value: string | number; theme: Theme; last?: boolean }) {
   return (
     <View style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: theme.rule }]}>
-      <Text style={{ color: theme.inkSoft, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: theme.inkSoft, fontSize: 13, fontFamily: "LibreFranklin_400Regular" }}>{label}</Text>
       <Text style={{ color: theme.ink, fontSize: 15, fontFamily: "JetBrainsMono_600SemiBold" }}>{value}</Text>
     </View>
   );
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  title: { fontSize: 12, fontWeight: "700", letterSpacing: 1 },
+  title: { fontSize: 12, fontFamily: "LibreFranklin_700Bold", letterSpacing: 1.2 },
   closeBtn: {
     width: 30,
     height: 30,
@@ -141,9 +141,10 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 9 },
   sparkline: { flexDirection: "row", alignItems: "flex-end", height: 44, marginTop: 16, marginBottom: 6 },
-  sparkLabel: { fontSize: 11 },
-  resetLink: { fontSize: 12, marginTop: 18, textDecorationLine: "underline" },
+  sparkLabel: { fontSize: 11, fontFamily: "LibreFranklin_400Regular", letterSpacing: 0.3 },
+  resetLink: { fontSize: 12, marginTop: 18, textDecorationLine: "underline", fontFamily: "LibreFranklin_400Regular" },
   footer: {
+    fontFamily: "LibreFranklin_400Regular",
     fontSize: 10.5,
     textAlign: "center",
     marginTop: 20,
@@ -152,6 +153,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   confirmBtn: { borderWidth: 1, borderRadius: 5, paddingHorizontal: 11, paddingVertical: 5 },
-  credit: { fontSize: 10, textAlign: "center", marginTop: 6 },
+  credit: { fontSize: 10, textAlign: "center", marginTop: 6, fontFamily: "LibreFranklin_400Regular" },
   creditLink: { textDecorationLine: "underline" },
 });
