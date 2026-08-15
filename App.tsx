@@ -282,27 +282,22 @@ function AppInner() {
               {/* Both theme glyphs are drawn SVG — text glyphs render at
                   unpredictable sizes and baselines on Android. */}
               {themeName === "dark" ? (
-                <Svg
-                  viewBox="0 0 24 24"
-                  width={20}
-                  height={20}
-                  stroke={theme.accent}
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  fill="none"
-                >
-                  <Circle cx={12} cy={12} r={4.5} />
-                  <Line x1={12} y1={1.5} x2={12} y2={3.5} />
-                  <Line x1={12} y1={20.5} x2={12} y2={22.5} />
-                  <Line x1={1.5} y1={12} x2={3.5} y2={12} />
-                  <Line x1={20.5} y1={12} x2={22.5} y2={12} />
-                  <Line x1={4.6} y1={4.6} x2={6} y2={6} />
-                  <Line x1={18} y1={18} x2={19.4} y2={19.4} />
-                  <Line x1={4.6} y1={19.4} x2={6} y2={18} />
-                  <Line x1={18} y1={6} x2={19.4} y2={4.6} />
+                // key + explicit per-element props: react-native-svg recycles
+                // native nodes between the two glyphs and resets absent props
+                // to SVG defaults (fill: black), which blacked out the sun.
+                <Svg key="sun" viewBox="0 0 24 24" width={20} height={20}>
+                  <Circle cx={12} cy={12} r={4.5} stroke={theme.accent} strokeWidth={1.8} fill="none" />
+                  <Line x1={12} y1={1.5} x2={12} y2={3.5} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={12} y1={20.5} x2={12} y2={22.5} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={1.5} y1={12} x2={3.5} y2={12} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={20.5} y1={12} x2={22.5} y2={12} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={4.6} y1={4.6} x2={6} y2={6} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={18} y1={18} x2={19.4} y2={19.4} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={4.6} y1={19.4} x2={6} y2={18} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
+                  <Line x1={18} y1={6} x2={19.4} y2={4.6} stroke={theme.accent} strokeWidth={1.8} strokeLinecap="round" />
                 </Svg>
               ) : (
-                <Svg viewBox="0 0 24 24" width={20} height={20}>
+                <Svg key="moon" viewBox="0 0 24 24" width={20} height={20}>
                   <Circle cx={12} cy={12} r={9} stroke={theme.accent} strokeWidth={1.8} fill="none" />
                   <Path d="M12 3 a9 9 0 0 0 0 18 Z" fill={theme.accent} />
                 </Svg>
