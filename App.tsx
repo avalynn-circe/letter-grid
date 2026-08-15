@@ -279,13 +279,29 @@ function AppInner() {
               </Svg>
             </Pressable>
             <Pressable onPress={toggleTheme} style={styles.iconBtn}>
+              {/* Both theme glyphs are drawn SVG — text glyphs render at
+                  unpredictable sizes and baselines on Android. */}
               {themeName === "dark" ? (
-                // ︎-suffixed sun forces the monochrome text glyph — Android
-                // otherwise swaps in the yellow emoji and ignores our color
-                <Text style={[styles.iconBtnText, { color: theme.accent }]}>☀︎</Text>
+                <Svg
+                  viewBox="0 0 24 24"
+                  width={20}
+                  height={20}
+                  stroke={theme.accent}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  fill="none"
+                >
+                  <Circle cx={12} cy={12} r={4.5} />
+                  <Line x1={12} y1={1.5} x2={12} y2={3.5} />
+                  <Line x1={12} y1={20.5} x2={12} y2={22.5} />
+                  <Line x1={1.5} y1={12} x2={3.5} y2={12} />
+                  <Line x1={20.5} y1={12} x2={22.5} y2={12} />
+                  <Line x1={4.6} y1={4.6} x2={6} y2={6} />
+                  <Line x1={18} y1={18} x2={19.4} y2={19.4} />
+                  <Line x1={4.6} y1={19.4} x2={6} y2={18} />
+                  <Line x1={18} y1={6} x2={19.4} y2={4.6} />
+                </Svg>
               ) : (
-                // The ◐ text glyph renders tiny and off-baseline on Android,
-                // so the half-moon is drawn as SVG like the other icons.
                 <Svg viewBox="0 0 24 24" width={20} height={20}>
                   <Circle cx={12} cy={12} r={9} stroke={theme.accent} strokeWidth={1.8} fill="none" />
                   <Path d="M12 3 a9 9 0 0 0 0 18 Z" fill={theme.accent} />
