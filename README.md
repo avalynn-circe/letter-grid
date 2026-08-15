@@ -53,9 +53,10 @@ and submit it, same as any iOS app.
   tested directly with plain Node if you ever want to script that.
 
 ## Known simplifications versus the web version
-- Tile taps use the same tap-sequence selection as before (tap a tile,
-  then an adjacent one, and so on) rather than a drag gesture — matches
-  what was already decided earlier in this project.
+- Selection supports both input styles: tap tiles one at a time and press
+  Submit, or drag a finger across the letters — lifting the finger
+  auto-submits the traced word (sliding back over the previous tile
+  un-selects it). The web version is tap/keyboard only.
 - The web version's keyboard bindings (arrows/Space/Backspace/Enter)
   don't apply here — this is a touch UI.
 

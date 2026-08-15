@@ -80,6 +80,8 @@ function AppInner() {
   const [history, setHistory] = useState<GameRecord[]>([]);
   const [statsVisible, setStatsVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+  // True while a finger is tracing across the board; locks page scrolling.
+  const [tracing, setTracing] = useState(false);
 
   // Ambient sound: off by default, not persisted. The track is a bundled
   // asset and only starts loading into the player when the app boots; no
@@ -135,9 +137,9 @@ function AppInner() {
     setReadout({ text: displayText ?? "", muted: displayText !== undefined });
   }
 
-  function submitWord() {
+  function submitPath(path: number[]) {
     if (!dictRef.current) return;
-    const w = wordFromPath(board, selectedPath);
+    const w = wordFromPath(board, path);
     const Word = capitalize(w);
     if (w.length < 3) {
       setReadout({ text: "Words need at least 3 letters.", muted: true });
@@ -148,7 +150,7 @@ function AppInner() {
       return;
     }
     if (!dictRef.current.has(w)) {
-      setInvalidFlash(selectedPath);
+      setInvalidFlash(path);
       setTimeout(() => setInvalidFlash([]), 320);
       clearSelection(`${Word} is not in the dictionary.`);
       return;
@@ -158,6 +160,16 @@ function AppInner() {
     setFound(next);
     clearSelection(`${Word} has been found.`);
     saveCurrentPuzzle({ board, found: [...next.entries()] });
+  }
+
+  function submitWord() {
+    submitPath(selectedPath);
+  }
+
+  // Lifting a trace auto-submits the word; traces shorter than a real word
+  // keep their selection so a stray touch never wipes progress.
+  function handleTraceEnd(path: number[]) {
+    if (path.length >= 3) submitPath(path);
   }
 
   function removeFoundWord(w: string) {
@@ -227,7 +239,7 @@ function AppInner() {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} scrollEnabled={!tracing}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Letter Grid</Text>
           <View style={styles.iconRow}>
@@ -269,7 +281,12 @@ function AppInner() {
             <Pressable onPress={toggleTheme} style={styles.iconBtn}>
               {/* ︎ forces the monochrome text glyph — Android otherwise
                   swaps in the bright yellow sun emoji and ignores our color */}
-              <Text style={[styles.iconBtnText, { color: theme.accent }]}>
+              <Text
+                style={[
+                  styles.iconBtnText,
+                  { color: theme.accent, fontSize: themeName === "dark" ? 15 : 19 },
+                ]}
+              >
                 {themeName === "dark" ? "☀︎" : "◐"}
               </Text>
             </Pressable>
@@ -293,6 +310,8 @@ function AppInner() {
           theme={theme}
           onSelectionChange={handleSelectionChange}
           onInvalidTap={handleInvalidTap}
+          onTraceEnd={handleTraceEnd}
+          onTraceActiveChange={setTracing}
         />
 
         <View style={styles.readout}>
@@ -302,15 +321,15 @@ function AppInner() {
         </View>
 
         <View style={styles.controls}>
+          <Pressable onPress={() => clearSelection()} style={styles.ghostBtn}>
+            <Text style={styles.ghostBtnText}>Clear</Text>
+          </Pressable>
           <Pressable
             onPress={submitWord}
             disabled={!canSubmit}
             style={[styles.ghostBtn, !canSubmit && styles.ghostBtnDisabled]}
           >
             <Text style={[styles.ghostBtnText, !canSubmit && { opacity: 0.35 }]}>Submit</Text>
-          </Pressable>
-          <Pressable onPress={() => clearSelection()} style={styles.ghostBtn}>
-            <Text style={styles.ghostBtnText}>Clear</Text>
           </Pressable>
         </View>
 
