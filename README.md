@@ -1,4 +1,4 @@
-# Spelling Grid — React Native App
+# Letter Grid — React Native App
 
 A real native app (via Expo/React Native) — actual native UI components,
 not a web view. Rewritten from scratch from the earlier web version;

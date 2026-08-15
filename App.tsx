@@ -229,7 +229,7 @@ function AppInner() {
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Spelling Grid</Text>
+          <Text style={styles.title}>Letter Grid</Text>
           <View style={styles.iconRow}>
             <Pressable
               onPress={() => setStatsVisible(true)}
