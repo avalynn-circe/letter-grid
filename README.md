@@ -60,6 +60,5 @@ and submit it, same as any iOS app.
 - The web version's keyboard bindings (arrows/Space/Backspace/Enter)
   don't apply here — this is a touch UI.
 
-Music: "Lofi Chill Beat (Window Rain Vibes)" by
-[free_audio_library](https://pixabay.com/music/beats-lofi-chill-beat-window-rain-vibes-366048/)
-via Pixabay.
+Sound: six short WAVs, generated for this app. No music — the ambient track
+this used to credit was removed line-wide under the "no hogs" rule.

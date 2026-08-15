@@ -4,6 +4,7 @@ import { GameRecord } from "../game/game";
 const HISTORY_KEY = "spelling-grid-history";
 const CURRENT_KEY = "spelling-grid-current";
 const THEME_KEY = "spelling-grid-theme";
+const SFX_KEY = "spelling-grid-sfx";
 
 export interface CurrentPuzzle {
   board: string[];
@@ -58,4 +59,13 @@ export async function saveThemePreference(theme: string): Promise<void> {
   } catch (e) {
     console.error("Could not save theme preference", e);
   }
+}
+
+/** Sound effects on? Defaults on, and remembered. */
+export async function loadSfx(): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(SFX_KEY)) !== "0"; } catch { return true; }
+}
+
+export async function saveSfx(on: boolean): Promise<void> {
+  try { await AsyncStorage.setItem(SFX_KEY, on ? "1" : "0"); } catch { /* non-fatal */ }
 }

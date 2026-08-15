@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Modal, Pressable, Linking } from "react-native";
+import { View, Text, StyleSheet, Modal, Pressable } from "react-native";
 import { Theme } from "../theme/theme";
 import { GameRecord } from "../game/game";
 
@@ -83,22 +83,19 @@ export default function StatsSheet({ visible, onClose, history, theme, onReset }
         )}
 
         <Text style={[styles.footer, { color: theme.inkSoft, borderTopColor: theme.rule }]}>
-          Nobody's Business — <Text style={{ fontFamily: "LibreFranklin_700Bold" }}>never ads. always private.</Text>
+          Nobody's Business — <Text style={{ fontFamily: "LibreFranklin_700Bold" }}>never ads. always private.</Text>{"  "}
+          {/* The build, which this app was the only one in the line missing.
+              Letter Tangle prints it in exactly this spot; Letter Grid defined
+              the footer and then never put the number in it, so the one app you
+              could not identify by looking at it was the one whose handoff row
+              said v18. A version you cannot read cannot answer the question it
+              exists to answer. */}
+          <Text style={{ fontSize: 9, opacity: 0.55 }}>v20</Text>
         </Text>
-        <Text style={[styles.credit, { color: theme.inkSoft }]}>
-          Music: "Lofi Chill Beat (Window Rain Vibes)" by{" "}
-          <Text
-            style={styles.creditLink}
-            onPress={() =>
-              Linking.openURL(
-                "https://pixabay.com/music/beats-lofi-chill-beat-window-rain-vibes-366048/"
-              )
-            }
-          >
-            free_audio_library
-          </Text>{" "}
-          via Pixabay
-        </Text>
+        {/* The music credit that stood here is gone with the track it
+            credited. Attribution outlives the asset if nobody checks, and a
+            credit for something the app no longer contains is a small untruth
+            sitting directly beneath a promise. */}
       </View>
     </Modal>
   );
@@ -153,6 +150,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   confirmBtn: { borderWidth: 1, borderRadius: 5, paddingHorizontal: 11, paddingVertical: 5 },
-  credit: { fontSize: 10, textAlign: "center", marginTop: 6, fontFamily: "LibreFranklin_400Regular" },
-  creditLink: { textDecorationLine: "underline" },
 });

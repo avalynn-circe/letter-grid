@@ -9,27 +9,16 @@ import {
   Modal,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useAudioPlayer } from "expo-audio";
 import Svg, { Path, Circle, Line } from "react-native-svg";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { useFonts as useBaloo, Baloo2_600SemiBold } from "@expo-google-fonts/baloo-2";
-import {
-  useFonts as useLibreFranklin,
-  LibreFranklin_400Regular,
-  LibreFranklin_600SemiBold,
-  LibreFranklin_700Bold,
-} from "@expo-google-fonts/libre-franklin";
-import {
-  useFonts as useJetBrainsMono,
-  JetBrainsMono_400Regular,
-  JetBrainsMono_600SemiBold,
-} from "@expo-google-fonts/jetbrains-mono";
+import { useFonts } from "expo-font";
 
+import { initSfx, play, setSfxEnabled } from "./src/audio/sfx";
 import Board from "./src/components/Board";
 import FoundWords from "./src/components/FoundWords";
 import StatsSheet from "./src/components/StatsSheet";
 import { getTheme, Theme, ThemeName } from "./src/theme/theme";
-import { loadDictionary } from "./src/data/dictionary";
+import { isWord } from "./src/data/dictionary";
 import {
   generateBoard,
   wordFromPath,
@@ -46,24 +35,27 @@ import {
   saveCurrentPuzzle,
   loadThemePreference,
   saveThemePreference,
+  loadSfx,
+  saveSfx,
 } from "./src/storage/storage";
 
 function AppInner() {
-  const [balooLoaded] = useBaloo({ Baloo2_600SemiBold });
-  const [libreLoaded] = useLibreFranklin({
-    LibreFranklin_400Regular,
-    LibreFranklin_600SemiBold,
-    LibreFranklin_700Bold,
+  // Local subsets, not the packages — see assets/fonts/README.md. The
+  // family names are unchanged, so every fontFamily string still resolves.
+  const [fontsReady] = useFonts({
+    Baloo2_600SemiBold: require("./assets/fonts/Baloo2_600SemiBold.ttf"),
+    LibreFranklin_400Regular: require("./assets/fonts/LibreFranklin_400Regular.ttf"),
+    LibreFranklin_600SemiBold: require("./assets/fonts/LibreFranklin_600SemiBold.ttf"),
+    LibreFranklin_700Bold: require("./assets/fonts/LibreFranklin_700Bold.ttf"),
+    JetBrainsMono_400Regular: require("./assets/fonts/JetBrainsMono_400Regular.ttf"),
+    JetBrainsMono_600SemiBold: require("./assets/fonts/JetBrainsMono_600SemiBold.ttf"),
   });
-  const [monoLoaded] = useJetBrainsMono({ JetBrainsMono_400Regular, JetBrainsMono_600SemiBold });
-  const fontsReady = balooLoaded && libreLoaded && monoLoaded;
 
   const systemScheme = useColorScheme();
   const [themeName, setThemeName] = useState<ThemeName>("light");
   const theme = getTheme(themeName);
 
   const [ready, setReady] = useState(false);
-  const dictRef = useRef<Set<string> | null>(null);
 
   const [board, setBoard] = useState<string[]>([]);
   const [selectedPath, setSelectedPath] = useState<number[]>([]);
@@ -83,26 +75,23 @@ function AppInner() {
   // True while a finger is tracing across the board; locks page scrolling.
   const [tracing, setTracing] = useState(false);
 
-  // Ambient sound: off by default, not persisted. The track is a bundled
-  // asset and only starts loading into the player when the app boots; no
-  // audio plays until the user unmutes.
-  const [soundOn, setSoundOn] = useState(false);
-  const player = useAudioPlayer(require("./assets/ambient.mp3"));
-  useEffect(() => {
-    player.loop = true;
-    player.volume = 0.35;
-  }, [player]);
+  // Effects: on by default and remembered. The 4.9 MB ambient track this
+  // replaced was off by default and forgotten on every launch.
+  const [soundOn, setSoundOn] = useState(true);
 
   // ---------- boot ----------
   useEffect(() => {
     (async () => {
-      dictRef.current = loadDictionary();
 
-      const [savedTheme, savedHistory, savedCurrent] = await Promise.all([
+      const [savedTheme, savedHistory, savedCurrent, savedSfx] = await Promise.all([
         loadThemePreference(),
         loadHistory(),
         loadCurrentPuzzle(),
+        loadSfx(),
       ]);
+
+      setSoundOn(savedSfx);
+      initSfx(savedSfx);
 
       setThemeName(savedTheme === "dark" || savedTheme === "light" ? (savedTheme as ThemeName) : systemScheme === "dark" ? "dark" : "light");
       setHistory(savedHistory);
@@ -123,11 +112,15 @@ function AppInner() {
 
   // ---------- selection / word building ----------
   function handleSelectionChange(path: number[]) {
+    // Only as the trace GROWS. Dragging back over your own path to undo a
+    // letter is a correction, and corrections should not tick.
+    if (path.length > selectedPath.length) play("tap");
     setSelectedPath(path);
     setReadout({ text: capitalize(wordFromPath(board, path)), muted: false });
   }
 
   function handleInvalidTap(index: number) {
+    play("nope");
     setInvalidFlash([index]);
     setTimeout(() => setInvalidFlash([]), 320);
   }
@@ -138,18 +131,20 @@ function AppInner() {
   }
 
   function submitPath(path: number[]) {
-    if (!dictRef.current) return;
     const w = wordFromPath(board, path);
     const Word = capitalize(w);
     if (w.length < 3) {
+      // Too short is not a wrong answer, it is an unfinished one. Silent.
       setReadout({ text: "Words need at least 3 letters.", muted: true });
       return;
     }
     if (found.has(w)) {
+      play("nope");
       clearSelection(`${Word} has already been found.`);
       return;
     }
-    if (!dictRef.current.has(w)) {
+    if (!isWord(w)) {
+      play("nope");
       setInvalidFlash(path);
       setTimeout(() => setInvalidFlash([]), 320);
       clearSelection(`${Word} is not in the dictionary.`);
@@ -157,6 +152,7 @@ function AppInner() {
     }
     const next = new Map(found);
     next.set(w, scoreForLength(w.length));
+    play("found");
     setFound(next);
     clearSelection(`${Word} has been found.`);
     saveCurrentPuzzle({ board, found: [...next.entries()] });
@@ -192,6 +188,7 @@ function AppInner() {
       await saveHistory(nextHistory);
     }
     const fresh = generateBoard();
+    play("deal");
     setBoard(fresh);
     setFound(new Map());
     clearSelection();
@@ -209,9 +206,11 @@ function AppInner() {
   }
 
   function toggleSound() {
-    if (soundOn) player.pause();
-    else player.play();
-    setSoundOn(!soundOn);
+    const on = !soundOn;
+    setSoundOn(on);
+    setSfxEnabled(on);
+    saveSfx(on);
+    if (on) play("tap");
   }
 
   async function toggleTheme() {
@@ -242,7 +241,7 @@ function AppInner() {
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />
       <ScrollView contentContainerStyle={styles.scrollContent} scrollEnabled={!tracing}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Letter Grid</Text>
+          <Text style={styles.title}>LoFi Letter Grid</Text>
           <View style={styles.iconRow}>
             <Pressable
               onPress={() => setStatsVisible(true)}
@@ -376,8 +375,8 @@ function AppInner() {
           <Pressable style={styles.confirmBackdrop} onPress={() => setConfirmVisible(false)} />
           <View style={styles.confirmDialog}>
             <Text style={styles.confirmText}>
-              Start a new puzzle? This ends your current board. Words you've already found will be
-              saved to your stats first.
+              Do you want to abandon this game and start a new one? Your progress will be added to
+              your stats.
             </Text>
             <Pressable
               style={styles.primaryBtn}

@@ -7,11 +7,6 @@
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#EEF3FC",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#EEF3FC"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.avalynncirce.lofilettergrid"
@@ -21,6 +16,22 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4568D6"
+      }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "imageWidth": 330,
+          "backgroundColor": "#EEF3FC"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a4f3ca67-4465-4006-b55a-be5a8da07360"
       }
     }
   }
