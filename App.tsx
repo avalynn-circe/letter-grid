@@ -227,6 +227,7 @@ function AppInner() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const canSubmit = selectedPath.length >= 3;
+  const canClear = selectedPath.length > 0;
 
   if (!fontsReady || !ready) {
     return (
@@ -334,8 +335,12 @@ function AppInner() {
         </View>
 
         <View style={styles.controls}>
-          <Pressable onPress={() => clearSelection()} style={styles.ghostBtn}>
-            <Text style={styles.ghostBtnText}>Clear</Text>
+          <Pressable
+            onPress={() => clearSelection()}
+            disabled={!canClear}
+            style={[styles.ghostBtn, !canClear && styles.ghostBtnDisabled]}
+          >
+            <Text style={[styles.ghostBtnText, !canClear && { opacity: 0.35 }]}>Clear</Text>
           </Pressable>
           <Pressable
             onPress={submitWord}

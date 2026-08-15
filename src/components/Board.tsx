@@ -14,15 +14,17 @@ interface BoardProps {
   onInvalidTap: (index: number) => void;
   /** Fired when a drag-trace lifts; receives the final path. */
   onTraceEnd: (path: number[]) => void;
-  /** Fired when a trace starts/stops so the parent can lock scrolling. */
+  /** Fired when a board touch starts/stops so the parent can lock scrolling. */
   onTraceActiveChange: (active: boolean) => void;
 }
 
 const GAP = 7;
 const PADDING = 12;
-// A tile only "catches" the finger within this fraction of its size from its
-// center, so brushing a corner during a diagonal move doesn't grab the wrong
-// letter. Raise toward 0.5 to make tracing grabbier, lower to make it stricter.
+// Movement below this (px) counts as a tap; above it, a trace.
+const TAP_SLOP = 6;
+// While tracing, a tile only "catches" the finger within this fraction of its
+// size from its center, so brushing a corner during a diagonal move doesn't
+// grab the wrong letter. Raise toward 0.5 for grabbier, lower for stricter.
 const HIT_RADIUS = 0.4;
 
 export default function Board({
@@ -42,12 +44,17 @@ export default function Board({
   const tileSizeRef = useRef(0);
   const selectedPathRef = useRef(selectedPath);
   selectedPathRef.current = selectedPath;
+  // Gesture bookkeeping. The board claims every touch at touch-down (that is
+  // what stops the page's ScrollView from stealing vertical drags on Android),
+  // so taps are resolved here too: no movement = tap, movement = trace.
+  const gestureMode = useRef<"idle" | "pending" | "trace">("idle");
+  const startPoint = useRef({ x: 0, y: 0 });
   // Live path during a drag; null when not tracing. Kept in a ref because
   // pan events arrive faster than state round-trips.
   const tracePath = useRef<number[] | null>(null);
   // Latest callbacks, so the once-created PanResponder never goes stale.
-  const cbRef = useRef({ onSelectionChange, onTraceEnd, onTraceActiveChange });
-  cbRef.current = { onSelectionChange, onTraceEnd, onTraceActiveChange };
+  const cbRef = useRef({ onSelectionChange, onInvalidTap, onTraceEnd, onTraceActiveChange });
+  cbRef.current = { onSelectionChange, onInvalidTap, onTraceEnd, onTraceActiveChange };
 
   const tileSize = containerWidth > 0 ? (containerWidth - PADDING * 2 - GAP * (SIZE - 1)) / SIZE : 0;
   tileSizeRef.current = tileSize;
@@ -65,9 +72,10 @@ export default function Board({
     });
   }
 
-  // ---------- tap selection (unchanged rules) ----------
-  function handlePress(index: number) {
-    let next = selectedPath.slice();
+  // ---------- tap selection (same rules as the web build) ----------
+  function tapTile(index: number) {
+    const path = selectedPathRef.current;
+    let next = path.slice();
     const last = next[next.length - 1];
     const secondLast = next[next.length - 2];
 
@@ -78,19 +86,20 @@ export default function Board({
     } else if (next.length >= 2 && index === secondLast) {
       next.pop(); // step back
     } else if (next.includes(index)) {
-      onInvalidTap(index); // can't reuse a tile mid-word
+      cbRef.current.onInvalidTap(index); // can't reuse a tile mid-word
       return;
     } else if (isAdjacent(index, last)) {
       next.push(index);
     } else {
-      onInvalidTap(index); // not adjacent to the active tile
+      cbRef.current.onInvalidTap(index); // not adjacent to the active tile
       return;
     }
-    onSelectionChange(next);
+    cbRef.current.onSelectionChange(next);
   }
 
-  // ---------- drag-trace selection ----------
-  function hitTile(pageX: number, pageY: number): number | null {
+  // ---------- hit testing ----------
+  // Taps accept anywhere on the tile square; traces demand the central circle.
+  function hitTile(pageX: number, pageY: number, mode: "tap" | "trace"): number | null {
     const t = tileSizeRef.current;
     if (t <= 0) return null;
     const x = pageX - gridOrigin.current.x;
@@ -99,13 +108,20 @@ export default function Board({
     const col = Math.floor(x / cell);
     const row = Math.floor(y / cell);
     if (col < 0 || col >= SIZE || row < 0 || row >= SIZE) return null;
-    const dx = x - (col * cell + t / 2);
-    const dy = y - (row * cell + t / 2);
-    const r = t * HIT_RADIUS;
-    if (dx * dx + dy * dy > r * r) return null;
+    const lx = x - col * cell;
+    const ly = y - row * cell;
+    if (mode === "tap") {
+      if (lx > t || ly > t) return null; // landed in the gap
+    } else {
+      const dx = lx - t / 2;
+      const dy = ly - t / 2;
+      const r = t * HIT_RADIUS;
+      if (dx * dx + dy * dy > r * r) return null;
+    }
     return row * SIZE + col;
   }
 
+  // ---------- drag-trace selection ----------
   function traceHit(index: number) {
     const path = tracePath.current;
     if (!path) return;
@@ -124,12 +140,15 @@ export default function Board({
   }
 
   function startTraceAt(pageX: number, pageY: number) {
-    const index = hitTile(pageX, pageY);
+    const index = hitTile(pageX, pageY, "trace");
     if (index === null) return;
     const path = tracePath.current;
     if (!path) return;
     const last = path[path.length - 1];
-    const continues = path.length > 0 && (index === last || isAdjacent(index, last)) && !(path.includes(index) && index !== last);
+    const continues =
+      path.length > 0 &&
+      (index === last || isAdjacent(index, last)) &&
+      !(path.includes(index) && index !== last);
     if (path.length > 0 && !continues) {
       // Not a continuation of the tapped-out selection: start a fresh word here.
       tracePath.current = [index];
@@ -139,36 +158,60 @@ export default function Board({
     traceHit(index);
   }
 
-  const panResponder = useRef(
-    PanResponder.create({
-      // Let plain taps through to the tiles; claim the gesture once the
-      // finger actually moves.
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_evt, g) => Math.abs(g.dx) + Math.abs(g.dy) > 6,
-      // Refuse to hand the gesture back to the ScrollView mid-trace.
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (_evt, g) => {
-        cbRef.current.onTraceActiveChange(true);
-        tracePath.current = [...selectedPathRef.current];
-        // Re-measure at trace start — the page may have been scrolled since layout.
-        measureGrid(() => startTraceAt(g.x0, g.y0));
-      },
-      onPanResponderMove: (_evt, g) => {
-        if (!tracePath.current) return;
-        const index = hitTile(g.moveX, g.moveY);
-        if (index !== null) traceHit(index);
-      },
-      onPanResponderRelease: () => endTrace(),
-      onPanResponderTerminate: () => endTrace(),
-    })
-  ).current;
-
   function endTrace() {
     const path = tracePath.current;
     tracePath.current = null;
-    cbRef.current.onTraceActiveChange(false);
     if (path) cbRef.current.onTraceEnd([...path]);
   }
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Claim in the capture phase, at touch-down. This wins over the tile
+      // Pressables AND (crucially) sets Android's disallow-intercept flag so
+      // the page ScrollView cannot steal vertical drags mid-trace.
+      onStartShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderGrant: (_evt, g) => {
+        gestureMode.current = "pending";
+        startPoint.current = { x: g.x0, y: g.y0 };
+        cbRef.current.onTraceActiveChange(true);
+        // Re-measure at touch-down — the page may have been scrolled since layout.
+        measureGrid();
+      },
+      onPanResponderMove: (_evt, g) => {
+        if (gestureMode.current === "pending") {
+          if (Math.abs(g.dx) + Math.abs(g.dy) <= TAP_SLOP) return;
+          gestureMode.current = "trace";
+          tracePath.current = [...selectedPathRef.current];
+          startTraceAt(startPoint.current.x, startPoint.current.y);
+        }
+        if (gestureMode.current === "trace") {
+          const index = hitTile(g.moveX, g.moveY, "trace");
+          if (index !== null) traceHit(index);
+        }
+      },
+      onPanResponderRelease: () => {
+        const mode = gestureMode.current;
+        gestureMode.current = "idle";
+        cbRef.current.onTraceActiveChange(false);
+        if (mode === "pending") {
+          // Finger never moved: it's a tap.
+          const index = hitTile(startPoint.current.x, startPoint.current.y, "tap");
+          if (index !== null) tapTile(index);
+        } else if (mode === "trace") {
+          endTrace();
+        }
+      },
+      onPanResponderTerminate: () => {
+        // Something took the gesture (should not happen; incoming call etc.).
+        const mode = gestureMode.current;
+        gestureMode.current = "idle";
+        cbRef.current.onTraceActiveChange(false);
+        if (mode === "trace") endTrace();
+      },
+    })
+  ).current;
 
   // ---------- rendering ----------
   function tileState(index: number): "idle" | "selected" | "active" | "invalid" {
@@ -232,7 +275,7 @@ export default function Board({
                   size={tileSize}
                   state={tileState(i)}
                   theme={theme}
-                  onPress={handlePress}
+                  onPress={tapTile}
                 />
               </View>
             ))}
