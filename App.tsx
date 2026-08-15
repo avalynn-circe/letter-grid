@@ -279,16 +279,18 @@ function AppInner() {
               </Svg>
             </Pressable>
             <Pressable onPress={toggleTheme} style={styles.iconBtn}>
-              {/* ︎ forces the monochrome text glyph — Android otherwise
-                  swaps in the bright yellow sun emoji and ignores our color */}
-              <Text
-                style={[
-                  styles.iconBtnText,
-                  { color: theme.accent, fontSize: themeName === "dark" ? 15 : 19 },
-                ]}
-              >
-                {themeName === "dark" ? "☀︎" : "◐"}
-              </Text>
+              {themeName === "dark" ? (
+                // ︎-suffixed sun forces the monochrome text glyph — Android
+                // otherwise swaps in the yellow emoji and ignores our color
+                <Text style={[styles.iconBtnText, { color: theme.accent }]}>☀︎</Text>
+              ) : (
+                // The ◐ text glyph renders tiny and off-baseline on Android,
+                // so the half-moon is drawn as SVG like the other icons.
+                <Svg viewBox="0 0 24 24" width={20} height={20}>
+                  <Circle cx={12} cy={12} r={9} stroke={theme.accent} strokeWidth={1.8} fill="none" />
+                  <Path d="M12 3 a9 9 0 0 0 0 18 Z" fill={theme.accent} />
+                </Svg>
+              )}
             </Pressable>
           </View>
         </View>
